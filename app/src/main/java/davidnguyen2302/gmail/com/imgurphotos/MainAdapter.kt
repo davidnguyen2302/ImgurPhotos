@@ -21,10 +21,16 @@ class MainAdapter(photoList : ArrayList<Photo>, private val mPos: (Int) -> Unit,
 
     private val mPhotoList = photoList
 
+    /**
+     * Return the size of the gallery requested
+     */
     override fun getItemCount(): Int {
         return mPhotoList.size
     }
 
+    /**
+     * Inflate the layout and create ViewHolder with photo and text view attached
+     */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
         val layoutInflater = LayoutInflater.from(parent.context)
         val viewHolder
@@ -34,12 +40,20 @@ class MainAdapter(photoList : ArrayList<Photo>, private val mPos: (Int) -> Unit,
         return viewHolder
     }
 
-
+    /**
+     * Load images from onto each ViewHolder based on position
+     * @param holder is the item_photo layout for each image
+     * @param position is the position of the populated image in the list
+     */
     override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
         Picasso.with(context).load(url.plus(mPhotoList[position].id.plus(ext))).into(holder.photo)
         holder.title.text = mPhotoList[position].title
         holder.onBind(position)
     }
+
+    /**
+     * PhotoViewHolder class with
+     */
     inner class PhotoViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         lateinit var photo: ImageView
         lateinit var title: TextView
