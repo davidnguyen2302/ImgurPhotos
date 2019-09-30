@@ -20,6 +20,7 @@ import java.util.*
 import android.content.Intent
 import android.support.v7.widget.RecyclerView
 import android.widget.AbsListView
+import android.widget.Toast
 
 /**
  * Home page class with search menu and view to display the images
@@ -169,7 +170,7 @@ class MainActivity : AppCompatActivity() {
                 // Clear out old data
                 photos.clear()
                 for (i in 0 until items.length()) {
-                    var photo: Photo = object : Photo() {}
+                    val photo: Photo = object : Photo() {}
                     val item: JSONObject = items.getJSONObject(i)
                     if (item.getBoolean("is_album")) {
                         photo.id = item.getString("cover")
@@ -184,14 +185,15 @@ class MainActivity : AppCompatActivity() {
 
                 // Only render photos if there are results
                 if (photos.size > 0) {
-                    Log.d(TAG, "##HAS RESULTS")
                     runOnUiThread {
                         render(photos)
                         recyclerView_photos.adapter.notifyDataSetChanged()
                         setView(recyclerView_photos, textView, progress)
+                        // Add toast message to display page #
+                        Toast.makeText(this@MainActivity, "Page $pageNum"
+                                , Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Log.d(TAG, "##NO RESULTS")
                     runOnUiThread {
                         displayNoResult()
                     }
@@ -261,6 +263,5 @@ class MainActivity : AppCompatActivity() {
                 FullscreenActivity::class.java)
         intent.putExtra("img", position)
         startActivity(intent)
-        Log.d(TAG, "##CLICKED $position")
     }
 }
