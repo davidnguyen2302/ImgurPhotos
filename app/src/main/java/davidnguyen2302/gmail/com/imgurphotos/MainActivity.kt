@@ -54,6 +54,10 @@ class MainActivity : AppCompatActivity() {
         render(photos)
     }
 
+    override fun onResume() {
+        super.onResume()
+        layout_root.requestFocus()
+    }
 
     /**
      * Create searchView and inflate the menu
