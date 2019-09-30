@@ -17,6 +17,9 @@ class FullscreenActivity : Activity() {
     private val ext: String = ".jpg"
     private val mPhotoList: List<Photo> = MainActivity.photos
 
+    /**
+     * Set statusbar transparent, imageView, back button
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_fullscreen)

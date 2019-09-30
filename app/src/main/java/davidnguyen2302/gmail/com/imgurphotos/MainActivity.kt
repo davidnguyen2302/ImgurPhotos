@@ -8,7 +8,6 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.SearchView
 import android.util.Log
 import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import davidnguyen2302.gmail.com.imgurphotos.model.Photo
@@ -19,7 +18,6 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.*
 import android.content.Intent
-import android.os.Handler
 import android.support.v7.widget.RecyclerView
 import android.widget.AbsListView
 
@@ -56,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         render(photos)
     }
 
+
     /**
      * Create searchView and inflate the menu
      * @param menu is the menu item
@@ -75,8 +74,8 @@ class MainActivity : AppCompatActivity() {
      * @param menu is the searchView menu item
      */
     private fun createSearchView(menu: Menu) {
-        val searchItem: MenuItem = menu.findItem(R.id.action_search)
-        val searchView: SearchView = searchItem.actionView as SearchView
+        val searchItem = menu.findItem(R.id.action_search)
+        val searchView = searchItem.actionView as SearchView
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
 
             // Upon editing search term
