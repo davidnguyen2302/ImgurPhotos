@@ -8,27 +8,13 @@
     android:orientation="vertical"
     tools:context=".FullscreenActivity">
 
-    <ImageButton
-        android:id="@+id/back_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="#00000000"
-        android:paddingLeft="16dp"
-        android:paddingTop="45dp"
-        android:src="@drawable/ic_arrow"
-        app:layout_constraintEnd_toStartOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <ImageView
         android:id="@+id/imageView_fullscreen"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:adjustViewBounds="true"
         android:background="#000000"
-        android:scaleType="centerCrop"
-        app:layout_constraintEnd_toStartOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:scaleType="centerCrop" />
 
     <TextView
         android:id="@+id/textView_fullscreen_title"
@@ -38,8 +24,15 @@
         android:background="#000000"
         android:paddingLeft="20dp"
         android:textColor="#FFFFFF"
-        app:layout_constraintEnd_toStartOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/imageView_fullscreen" />
+
+    <ImageButton
+        android:id="@+id/back_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#00000000"
+        android:paddingLeft="16dp"
+        android:paddingTop="45dp"
+        android:src="@drawable/ic_arrow" />
 
 </android.support.constraint.ConstraintLayout>
