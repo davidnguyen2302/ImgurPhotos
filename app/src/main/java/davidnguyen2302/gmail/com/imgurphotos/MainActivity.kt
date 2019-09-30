@@ -18,7 +18,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.util.*
-
+import android.content.Intent
 
 /**
  * Home page class with search menu and view to display the images
@@ -27,11 +27,11 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
 
     private val baseUrl: String = "https://api.imgur.com/3/gallery/search/time/?q="
-    private val photos = arrayListOf<Photo>()
     private var searchTerm: String? = ""
 
     companion object {
         private val TAG by lazy { MainActivity::class.java.simpleName }
+        val photos = arrayListOf<Photo>()
     }
 
     /**
@@ -179,11 +179,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Helper method to trigger action upon onClick on each photo
+     * Helper method to launch image in fullscreen upon onClick on a photo
      * @param position is the location of the image in the list
      */
     private fun photoOnClick(position: Int) {
-        Log.d(TAG, "CLICKED $position")
-
+        val intent = Intent(this@MainActivity,
+                FullscreenActivity::class.java)
+        intent.putExtra("img", position)
+        startActivity(intent)
     }
 }
