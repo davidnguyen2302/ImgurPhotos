@@ -54,6 +54,10 @@ class MainActivity : AppCompatActivity() {
         render(photos)
     }
 
+    /**
+     * Request focus on root layout upon resume (avoid keyboard pop-up as searchView automatically
+     * takes focus onResume from FullscreenActivity)
+     */
     override fun onResume() {
         super.onResume()
         layout_root.requestFocus()
