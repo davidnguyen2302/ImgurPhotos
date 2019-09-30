@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private var currentItems: Int = 0
     private var totalItems: Int = 0
     private var scrolledOutItems: Int = 0
+    private var noResult = ""
 
     companion object {
         private val TAG by lazy { MainActivity::class.java.simpleName }
@@ -151,55 +152,61 @@ class MainActivity : AppCompatActivity() {
      */
     private fun getRequest(url: String) {
         setView(progress, recyclerView_photos, textView)
-        val client = OkHttpClient()
+        if (isConnected()) {
+            val client = OkHttpClient()
 
-        val request = Request.Builder()
-                .url(url)
-                .get()
-                .addHeader("authorization", "Client-ID 126701cd8332f32")
-                .build()
+            val request = Request.Builder()
+                    .url(url)
+                    .get()
+                    .addHeader("authorization", "Client-ID 126701cd8332f32")
+                    .build()
 
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG, "An error has occurred ${e.stackTrace}")
-            }
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e(TAG, "An error has occurred ${e.stackTrace}")
+                }
 
-            override fun onResponse(call: Call, response: Response) {
-                val data = JSONObject(response.body?.string())
-                val items: JSONArray = data.getJSONArray("data")
-                // Clear out old data
-                photos.clear()
-                for (i in 0 until items.length()) {
-                    val photo: Photo = object : Photo() {}
-                    val item: JSONObject = items.getJSONObject(i)
-                    if (item.getBoolean("is_album")) {
-                        photo.id = item.getString("cover")
+                override fun onResponse(call: Call, response: Response) {
+                    val data = JSONObject(response.body?.string())
+                    val items: JSONArray = data.getJSONArray("data")
+                    // Clear out old data
+                    photos.clear()
+                    for (i in 0 until items.length()) {
+                        val photo: Photo = object : Photo() {}
+                        val item: JSONObject = items.getJSONObject(i)
+                        if (item.getBoolean("is_album")) {
+                            photo.id = item.getString("cover")
+                        } else {
+                            photo.id = item.getString("id")
+                        }
+                        photo.title = item.getString("title")
+                        photos.add(photo)
+                    }
+                    // Set flag if max size of the page
+                    maxSize = (photos.size == 60)
+
+                    // Only render photos if there are results
+                    if (photos.size > 0) {
+                        runOnUiThread {
+                            render(photos)
+                            recyclerView_photos.adapter.notifyDataSetChanged()
+                            setView(recyclerView_photos, textView, progress)
+                            // Add toast message to display page #
+                            Toast.makeText(this@MainActivity, "Page $pageNum"
+                                    , Toast.LENGTH_SHORT).show()
+                        }
                     } else {
-                        photo.id = item.getString("id")
-                    }
-                    photo.title = item.getString("title")
-                    photos.add(photo)
-                }
-                // Set flag if max size of the page
-                maxSize = (photos.size == 60)
-
-                // Only render photos if there are results
-                if (photos.size > 0) {
-                    runOnUiThread {
-                        render(photos)
-                        recyclerView_photos.adapter.notifyDataSetChanged()
-                        setView(recyclerView_photos, textView, progress)
-                        // Add toast message to display page #
-                        Toast.makeText(this@MainActivity, "Page $pageNum"
-                                , Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    runOnUiThread {
-                        displayNoResult()
+                        runOnUiThread {
+                            displayNoResult()
+                        }
                     }
                 }
+            })
+        } else {
+            runOnUiThread {
+                displayNoInternet()
             }
-        })
+        }
     }
 
     /**
@@ -215,12 +222,32 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Set textView to visible when no internet returned
+     */
+    private fun displayNoInternet() {
+        noResult = "Please check your internet connection"
+        textView.text = noResult
+        setView(textView, recyclerView_photos, progress)
+    }
+
+    /**
      * Set no result textView to visible when no result returned
      */
     private fun displayNoResult() {
-        val noResult = "Your search for \"$searchTerm\" didn't return any results"
+        noResult = "Your search for \"$searchTerm\" didn't return any results"
         textView.text = noResult
         setView(textView, recyclerView_photos, progress)
+    }
+
+    /**
+     * Return true if you have internet access
+     */
+    @Throws(InterruptedException::class, IOException::class)
+    private fun isConnected(): Boolean {
+        val command = "ping -c 1 google.com"
+        val command2 = "ping -c 1 amazon.com"
+        return Runtime.getRuntime().exec(command).waitFor() == 0
+                || Runtime.getRuntime().exec(command2).waitFor() == 0
     }
 
     /**
