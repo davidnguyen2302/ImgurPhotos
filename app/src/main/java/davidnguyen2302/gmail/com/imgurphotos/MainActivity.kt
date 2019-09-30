@@ -19,6 +19,9 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.*
 import android.content.Intent
+import android.os.Handler
+import android.support.v7.widget.RecyclerView
+import android.widget.AbsListView
 
 /**
  * Home page class with search menu and view to display the images
@@ -26,8 +29,15 @@ import android.content.Intent
  */
 class MainActivity : AppCompatActivity() {
 
-    private val baseUrl: String = "https://api.imgur.com/3/gallery/search/time/?q="
+    private val baseUrl: String = "https://api.imgur.com/3/gallery/search/time/"
+    private var pageNum: Int = 1 // Default to 1
+    private val queryUrl: String = "?q="
     private var searchTerm: String? = ""
+    private var maxSize: Boolean = false
+    private var isScrolling: Boolean = false
+    private var currentItems: Int = 0
+    private var totalItems: Int = 0
+    private var scrolledOutItems: Int = 0
 
     companion object {
         private val TAG by lazy { MainActivity::class.java.simpleName }
@@ -71,10 +81,15 @@ class MainActivity : AppCompatActivity() {
 
             // Upon editing search term
             override fun onQueryTextChange(newText: String?): Boolean {
+                pageNum = 1 // Reset page number
                 // Hide textView when performing a search
                 runOnUiThread {
                     textView.visibility = View.GONE
+                    recyclerView_photos.visibility = View.GONE
+                    recyclerView_photos.adapter.notifyDataSetChanged()
                 }
+                // Clear the list
+                photos.clear()
                 return false
             }
 
@@ -82,14 +97,23 @@ class MainActivity : AppCompatActivity() {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 // Make sure to always start the new search from empty list
                 photos.clear()
-
-                val url = baseUrl.plus(query)
-                getRequest(url)
+                // Assign query -> searchTerm var in case of result not found or request next page
                 searchTerm = query
+                getRequest(updateURL(searchTerm))
                 hideKeyboard()
                 return true
             }
         })
+    }
+
+    /**
+     * Update the URL with page number and search term
+     * @param query is the search term
+     * @return the updated URL
+     */
+    private fun updateURL(query: String?) : String {
+        // Concatenate the base URL + page number + query URL + search term
+        return baseUrl.plus(pageNum.toString()).plus(queryUrl).plus(query)
     }
 
     /**
@@ -118,6 +142,7 @@ class MainActivity : AppCompatActivity() {
      * @param url is the URL link that will be used to call the get request
      */
     private fun getRequest(url: String) {
+        setView(progress, recyclerView_photos, textView)
         val client = OkHttpClient()
 
         val request = Request.Builder()
@@ -134,7 +159,8 @@ class MainActivity : AppCompatActivity() {
             override fun onResponse(call: Call, response: Response) {
                 val data = JSONObject(response.body?.string())
                 val items: JSONArray = data.getJSONArray("data")
-
+                // Clear out old data
+                photos.clear()
                 for (i in 0 until items.length()) {
                     var photo: Photo = object : Photo() {}
                     val item: JSONObject = items.getJSONObject(i)
@@ -146,12 +172,19 @@ class MainActivity : AppCompatActivity() {
                     photo.title = item.getString("title")
                     photos.add(photo)
                 }
+                // Set flag if max size of the page
+                maxSize = (photos.size == 60)
+
                 // Only render photos if there are results
                 if (photos.size > 0) {
+                    Log.d(TAG, "##HAS RESULTS")
                     runOnUiThread {
                         render(photos)
+                        recyclerView_photos.adapter.notifyDataSetChanged()
+                        setView(recyclerView_photos, textView, progress)
                     }
                 } else {
+                    Log.d(TAG, "##NO RESULTS")
                     runOnUiThread {
                         displayNoResult()
                     }
@@ -161,12 +194,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Display one view at a time and hide the others
+     * @param display the view to be seen
+     * @param hide the view to be hid
+     * @param hide2 the view to be hid
+     */
+    private fun setView(display: View, hide: View, hide2: View) {
+        hide.visibility = View.GONE
+        hide2.visibility = View.GONE
+        display.visibility = View.VISIBLE
+    }
+
+    /**
      * Set no result textView to visible when no result returned
      */
     private fun displayNoResult() {
         val noResult = "Your search for \"$searchTerm\" didn't return any results"
         textView.text = noResult
-        textView.visibility = View.VISIBLE
+        setView(textView, recyclerView_photos, progress)
     }
 
     /**
@@ -174,8 +219,30 @@ class MainActivity : AppCompatActivity() {
      * @param photos is the list of photos retrieved from the get request
      */
     private fun render(photos: List<Photo>) {
-        recyclerView_photos.layoutManager = LinearLayoutManager(this)
+        val manager = LinearLayoutManager(this)
+        recyclerView_photos.layoutManager = manager
         recyclerView_photos.adapter = MainAdapter(photos as ArrayList<Photo>, ::photoOnClick, this)
+        recyclerView_photos.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView?, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL) {
+                    isScrolling = true
+                }
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                currentItems = manager.childCount
+                scrolledOutItems = manager.findFirstVisibleItemPosition()
+                totalItems = manager.itemCount
+                // If user scrolled to the bottom and there's more page -> get the new data
+                if (maxSize && isScrolling && (currentItems + scrolledOutItems == totalItems)) {
+                    isScrolling = false
+                    pageNum++
+                    getRequest(updateURL(searchTerm))
+                }
+            }
+        })
     }
 
     /**
@@ -187,5 +254,6 @@ class MainActivity : AppCompatActivity() {
                 FullscreenActivity::class.java)
         intent.putExtra("img", position)
         startActivity(intent)
+        Log.d(TAG, "##CLICKED $position")
     }
 }

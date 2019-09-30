@@ -34,8 +34,8 @@ class FullscreenActivity : Activity() {
         Picasso.with(this).load(url.plus(mPhotoList[position].id.plus(ext)))
                                  .into(imageView_fullscreen)
         textView_fullscreen_title.text = mPhotoList[position].title
-        back_btn.setOnClickListener(View.OnClickListener {
+        back_btn.setOnClickListener {
             onBackPressed()
-        })
+        }
     }
 }
