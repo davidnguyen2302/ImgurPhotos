@@ -9,12 +9,14 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import com.squareup.picasso.Picasso
+import davidnguyen2302.gmail.com.imgurphotos.model.Photo
+
 /**
  * MainAdapter class to setup RecyclerView
  * @author Duc Nguyen
  */
-class MainAdapter(photoList : ArrayList<Photo>, private val mPos: (Int) -> Unit, val context: Context)
-        : RecyclerView.Adapter<MainAdapter.PhotoViewHolder>() {
+class MainAdapter(photoList : ArrayList<Photo>, private val mPos: (Int) -> Unit, private val context: Context)
+    : RecyclerView.Adapter<MainAdapter.PhotoViewHolder>() {
 
     private val url: String = "https://i.imgur.com/"
     private val ext: String = ".jpg"

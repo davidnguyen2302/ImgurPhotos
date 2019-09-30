@@ -2,8 +2,8 @@ package davidnguyen2302.gmail.com.imgurphotos
 
 import android.app.Activity
 import android.content.Context
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.SearchView
 import android.util.Log
@@ -11,11 +11,14 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import davidnguyen2302.gmail.com.imgurphotos.model.Photo
 import kotlinx.android.synthetic.main.activity_main.*
 import okhttp3.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.util.*
+
 
 /**
  * Home page class with search menu and view to display the images
@@ -23,11 +26,13 @@ import java.io.IOException
  */
 class MainActivity : AppCompatActivity() {
 
+    private val baseUrl: String = "https://api.imgur.com/3/gallery/search/time/?q="
+    private val photos = arrayListOf<Photo>()
+    private var searchTerm: String? = ""
+
     companion object {
         private val TAG by lazy { MainActivity::class.java.simpleName }
     }
-
-    private val baseUrl: String = "https://api.imgur.com/3/gallery/search/time/1?q="
 
     /**
      * Create the view of the Main page of the app
@@ -38,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        render(photos)
     }
 
     /**
@@ -51,7 +57,6 @@ class MainActivity : AppCompatActivity() {
         inflater.inflate(R.menu.menu_search, menu)
 
         createSearchView(menu)
-
         return true
     }
 
@@ -63,13 +68,24 @@ class MainActivity : AppCompatActivity() {
         val searchItem: MenuItem = menu.findItem(R.id.action_search)
         val searchView: SearchView = searchItem.actionView as SearchView
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+
+            // Upon editing search term
             override fun onQueryTextChange(newText: String?): Boolean {
+                // Hide textView when performing a search
+                runOnUiThread {
+                    textView.visibility = View.GONE
+                }
                 return false
             }
 
+            // Upon submitting
             override fun onQueryTextSubmit(query: String?): Boolean {
+                // Make sure to always start the new search from empty list
+                photos.clear()
+
                 val url = baseUrl.plus(query)
                 getRequest(url)
+                searchTerm = query
                 hideKeyboard()
                 return true
             }
@@ -81,10 +97,10 @@ class MainActivity : AppCompatActivity() {
      */
     private fun Activity.hideKeyboard() {
         hideKeyboard(
-            if (currentFocus == null)
-                View(this)
-            else
-                currentFocus
+                if (currentFocus == null)
+                    View(this)
+                else
+                    currentFocus
         )
     }
 
@@ -99,6 +115,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Create the GET request using the search input
+     * @param url is the URL link that will be used to call the get request
      */
     private fun getRequest(url: String) {
         val client = OkHttpClient()
@@ -117,30 +134,56 @@ class MainActivity : AppCompatActivity() {
             override fun onResponse(call: Call, response: Response) {
                 val data = JSONObject(response.body?.string())
                 val items: JSONArray = data.getJSONArray("data")
-                val photos = arrayListOf<Photo>()
 
                 for (i in 0 until items.length()) {
                     var photo: Photo = object : Photo() {}
                     val item: JSONObject = items.getJSONObject(i)
-                    photo.id = item.getString("id")
+                    if (item.getBoolean("is_album")) {
+                        photo.id = item.getString("cover")
+                    } else {
+                        photo.id = item.getString("id")
+                    }
                     photo.title = item.getString("title")
-
                     photos.add(photo)
                 }
-                runOnUiThread{
-                    render(photos)
+                // Only render photos if there are results
+                if (photos.size > 0) {
+                    runOnUiThread {
+                        render(photos)
+                    }
+                } else {
+                    runOnUiThread {
+                        displayNoResult()
+                    }
                 }
             }
         })
-
     }
 
+    /**
+     * Set no result textView to visible when no result returned
+     */
+    private fun displayNoResult() {
+        val noResult = "Your search for \"$searchTerm\" didn't return any results"
+        textView.text = noResult
+        textView.visibility = View.VISIBLE
+    }
+
+    /**
+     * Set the adapter to the recyclerView to display the content
+     * @param photos is the list of photos retrieved from the get request
+     */
     private fun render(photos: List<Photo>) {
         recyclerView_photos.layoutManager = LinearLayoutManager(this)
         recyclerView_photos.adapter = MainAdapter(photos as ArrayList<Photo>, ::photoOnClick, this)
     }
 
+    /**
+     * Helper method to trigger action upon onClick on each photo
+     * @param position is the location of the image in the list
+     */
     private fun photoOnClick(position: Int) {
         Log.d(TAG, "CLICKED $position")
+
     }
 }
